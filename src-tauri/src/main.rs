@@ -6,9 +6,29 @@ mod editor;
 use std::sync::Mutex;
 
 use editor::state::EditorState;
+use tauri::Emitter;
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            let mut paths: Vec<String> = Vec::new();
+            for arg in std::env::args().skip(1) {
+                if arg.starts_with('-') {
+                    continue;
+                }
+                let path = std::path::PathBuf::from(arg);
+                let resolved = if path.is_absolute() {
+                    path
+                } else {
+                    std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).join(path)
+                };
+                paths.push(resolved.to_string_lossy().to_string());
+            }
+            if let Some(first) = paths.first() {
+                let _ = app.emit("open-file", first.clone());
+            }
+            Ok(())
+        })
         .manage(Mutex::new(EditorState::new()))
         .invoke_handler(tauri::generate_handler![
             commands::initialize_editor,

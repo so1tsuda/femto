@@ -1,6 +1,7 @@
 import "./styles/main.css";
+import { listen } from "@tauri-apps/api/event";
 import { loadAndApplyAppConfig } from "./editor/config";
-import { initializeEditor } from "./editor/commands";
+import { initializeEditor, openFile } from "./editor/commands";
 import { bindEditorKeys } from "./editor/keybindings";
 import { initializeEditorView, renderSnapshot } from "./editor/ui";
 
@@ -42,6 +43,25 @@ const ctx = { editor, highlight, cursorBlock, minibuffer, minibufferPrompt, mini
 initializeEditorView(ctx);
 bindEditorKeys(ctx);
 
+let editorReady = false;
+let pendingOpenPath: string | null = null;
+
+listen<string>("open-file", (event) => {
+  if (!editorReady) {
+    pendingOpenPath = event.payload;
+    return;
+  }
+  openFile(event.payload)
+    .then((snapshot) => renderSnapshot(ctx, snapshot))
+    .catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      status.textContent = `Open file error: ${message}`;
+    });
+}).catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  status.textContent = `Event error: ${message}`;
+});
+
 loadAndApplyAppConfig()
   .catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
@@ -50,6 +70,17 @@ loadAndApplyAppConfig()
   .finally(() => {
     initializeEditor().then((snapshot) => {
       renderSnapshot(ctx, snapshot);
+      editorReady = true;
+      if (pendingOpenPath) {
+        const path = pendingOpenPath;
+        pendingOpenPath = null;
+        openFile(path)
+          .then((opened) => renderSnapshot(ctx, opened))
+          .catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : String(error);
+            status.textContent = `Open file error: ${message}`;
+          });
+      }
       editor.focus();
     }).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
