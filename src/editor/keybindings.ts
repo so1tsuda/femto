@@ -47,10 +47,11 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
     currentFilePath = snapshot.filePath;
     renderSnapshot(ctx, snapshot, statusOverride);
     if (preserveMarkSelection && markPosition !== null) {
-      const start = Math.min(markPosition, snapshot.cursor);
-      const end = Math.max(markPosition, snapshot.cursor);
-      ctx.editor.selectionStart = start;
-      ctx.editor.selectionEnd = end;
+      if (markPosition <= snapshot.cursor) {
+        ctx.editor.setSelectionRange(markPosition, snapshot.cursor, "forward");
+      } else {
+        ctx.editor.setSelectionRange(snapshot.cursor, markPosition, "backward");
+      }
     }
   };
 
