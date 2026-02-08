@@ -187,6 +187,14 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
     }
 
     if (key === "c") {
+      const snapshot = await runEditorCommand("noop");
+      if (snapshot.modified) {
+        const ok = window.confirm("Buffer is modified. Quit without saving?");
+        if (!ok) {
+          await renderWithPrefix();
+          return true;
+        }
+      }
       await getCurrentWindow().close();
       return true;
     }

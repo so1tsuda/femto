@@ -210,6 +210,24 @@ pub async fn open_file(
     state: State<'_, Mutex<EditorState>>,
 ) -> Result<EditorSnapshot, String> {
     let path_buf = PathBuf::from(path);
+    let metadata = fs::metadata(&path_buf).await.ok();
+    if metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false) {
+        let listing = build_directory_listing(&path_buf).await?;
+        let mut editor = state
+            .lock()
+            .map_err(|_| "state lock poisoned".to_string())?;
+        editor.load_content(
+            listing,
+            "UTF-8".to_string(),
+            "CRLF".to_string(),
+            path_buf.clone(),
+        );
+        editor.file_path = None;
+        editor.mark_saved();
+        editor.set_status_message(Some(format!("Directory: {}", path_buf.display())));
+        return Ok(editor.snapshot());
+    }
+
     enum OpenResult {
         Existing(DecodedContent),
         NewFile,
@@ -246,6 +264,39 @@ pub async fn open_file(
     }
 
     Ok(editor.snapshot())
+}
+
+async fn build_directory_listing(path: &Path) -> Result<String, String> {
+    let mut entries = fs::read_dir(path)
+        .await
+        .map_err(|err| format!("failed to read directory {}: {err}", path.display()))?;
+    let mut names: Vec<(String, bool)> = Vec::new();
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|err| format!("failed to read directory entry: {err}"))?
+    {
+        let file_name = entry.file_name().to_string_lossy().to_string();
+        let is_dir = entry
+            .metadata()
+            .await
+            .map(|m| m.is_dir())
+            .unwrap_or(false);
+        names.push((file_name, is_dir));
+    }
+
+    names.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+
+    let mut out = String::new();
+    out.push_str(&format!("Directory: {}\n\n", path.display()));
+    for (name, is_dir) in names {
+        if is_dir {
+            out.push_str(&format!("{name}/\n"));
+        } else {
+            out.push_str(&format!("{name}\n"));
+        }
+    }
+    Ok(out)
 }
 
 #[tauri::command]
