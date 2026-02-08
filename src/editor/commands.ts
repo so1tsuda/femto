@@ -19,6 +19,8 @@ export interface ThemeConfig {
   textColor: string | null;
   cursorColor: string | null;
   selectionBg: string | null;
+  currentLineBg: string | null;
+  currentLineHighlight: boolean | null;
   statusbarBg: string | null;
   minibufferBg: string | null;
   backgroundImage: string | null;

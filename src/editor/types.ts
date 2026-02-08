@@ -14,6 +14,7 @@ export interface EditorSnapshot {
 export interface EditorUiContext {
   editor: HTMLTextAreaElement;
   highlight: HTMLElement;
+  currentLine: HTMLElement;
   cursorBlock: HTMLElement;
   status: HTMLElement;
   minibuffer: HTMLElement;

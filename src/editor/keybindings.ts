@@ -455,6 +455,19 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
       return;
     }
 
+    if (event.ctrlKey && !event.altKey && key === "h") {
+      event.preventDefault();
+      try {
+        clearMark();
+        await syncCursorFromDom();
+        const snapshot = await runEditorCommand("delete_backward_char");
+        renderAndTrack(snapshot);
+      } catch (error) {
+        await renderError(error);
+      }
+      return;
+    }
+
     if (event.ctrlKey && !event.altKey && key === " ") {
       event.preventDefault();
       markPosition = ctx.editor.selectionEnd;

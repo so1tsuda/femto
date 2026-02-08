@@ -103,10 +103,14 @@ export async function loadAndApplyAppConfig(): Promise<void> {
   setVar("--cursor-color", normalizeColor(theme.cursorColor));
   const selection = theme.selectionBg ?? "#264f78";
   setVar("--selection-bg", toRgbaWithAlpha(selection, 0.45));
+  const currentLine = theme.currentLineBg ?? "#7dcfff";
+  setVar("--current-line-bg", toRgbaWithAlpha(currentLine, 0.25));
   setVar("--statusbar-bg", normalizeColor(theme.statusbarBg) ?? bg);
   setVar("--minibuffer-bg", bg);
   setVar("--minibuffer-input-bg", bg);
   setVar("--editor-font-family", theme.fontFamily);
+  const highlightEnabled = theme.currentLineHighlight ?? true;
+  document.documentElement.setAttribute("data-current-line", highlightEnabled ? "on" : "off");
 
   if (theme.backgroundImage) {
     document.body.style.backgroundImage = normalizeBackgroundImage(theme.backgroundImage);

@@ -105,6 +105,10 @@ export function promptMinibuffer(
           return `<span class="${active}">${escapeHtml(candidate)}</span>`;
         })
         .join("");
+      const active = ctx.minibufferCandidates.querySelector<HTMLElement>(".minibuffer-candidate.active");
+      if (active) {
+        active.scrollIntoView({ block: "nearest" });
+      }
     };
 
     const commit = (): void => {

@@ -26,6 +26,7 @@ export function renderSnapshot(
   ctx.editor.selectionEnd = snapshot.cursor;
   ensureCursorVisible(ctx, snapshot.line);
   syncOverlayScroll(ctx);
+  updateCurrentLine(ctx, snapshot.cursor);
   updateCursorBlock(ctx);
   ctx.highlight.innerHTML = highlightText(snapshot.text, snapshot.filePath);
 
@@ -39,6 +40,7 @@ export function initializeEditorView(ctx: EditorUiContext): void {
 
   const refreshCursor = (): void => {
     syncOverlayScroll(ctx);
+    updateCurrentLine(ctx, ctx.editor.selectionEnd);
     updateCursorBlock(ctx);
   };
 
@@ -114,6 +116,26 @@ function ensureCursorVisible(ctx: EditorUiContext, line: number): void {
 function syncOverlayScroll(ctx: EditorUiContext): void {
   ctx.highlight.scrollTop = ctx.editor.scrollTop;
   ctx.highlight.scrollLeft = ctx.editor.scrollLeft;
+}
+
+function updateCurrentLine(ctx: EditorUiContext, cursorIndex: number): void {
+  const enabled = document.documentElement.getAttribute("data-current-line") !== "off";
+  if (!enabled) {
+    ctx.currentLine.style.display = "none";
+    return;
+  }
+
+  const style = getComputedStyle(ctx.editor);
+  const lineHeight = Number.parseFloat(style.lineHeight) || 22;
+  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+  const text = ctx.editor.value;
+  const cursor = Math.min(Math.max(0, cursorIndex), text.length);
+  const lineIndex = (text.slice(0, cursor).match(/\n/g) ?? []).length;
+  const top = paddingTop + lineIndex * lineHeight - ctx.editor.scrollTop;
+
+  ctx.currentLine.style.display = "block";
+  ctx.currentLine.style.transform = `translateY(${top}px)`;
+  ctx.currentLine.style.height = `${lineHeight}px`;
 }
 
 function updateCursorBlock(ctx: EditorUiContext): void {

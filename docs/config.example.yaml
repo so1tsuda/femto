@@ -17,6 +17,10 @@ theme:
   # Selection highlight
   selection_bg: "#264f78"
 
+  # Current line highlight (entire line)
+  current_line_highlight: true
+  current_line_bg: "rgba(125, 207, 255, 0.25)"
+
   # Status bar background
   statusbar_bg: 2d2d30
 

@@ -13,6 +13,7 @@ if (!app) {
 app.innerHTML = `
   <main class="layout">
     <div class="editor-stack">
+      <div id="current-line" class="current-line" aria-hidden="true"></div>
       <pre id="highlight" class="highlight" aria-hidden="true"></pre>
       <div id="cursor-block" class="cursor-block" aria-hidden="true"></div>
       <textarea id="editor" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
@@ -28,6 +29,7 @@ app.innerHTML = `
 
 const editor = document.querySelector<HTMLTextAreaElement>("#editor");
 const highlight = document.querySelector<HTMLPreElement>("#highlight");
+const currentLine = document.querySelector<HTMLDivElement>("#current-line");
 const cursorBlock = document.querySelector<HTMLDivElement>("#cursor-block");
 const minibuffer = document.querySelector<HTMLDivElement>("#minibuffer");
 const minibufferPrompt = document.querySelector<HTMLSpanElement>("#minibuffer-prompt");
@@ -35,11 +37,11 @@ const minibufferInput = document.querySelector<HTMLTextAreaElement>("#minibuffer
 const minibufferCandidates = document.querySelector<HTMLDivElement>("#minibuffer-candidates");
 const status = document.querySelector<HTMLDivElement>("#status");
 
-if (!editor || !highlight || !cursorBlock || !minibuffer || !minibufferPrompt || !minibufferInput || !minibufferCandidates || !status) {
+if (!editor || !highlight || !currentLine || !cursorBlock || !minibuffer || !minibufferPrompt || !minibufferInput || !minibufferCandidates || !status) {
   throw new Error("Missing editor UI");
 }
 
-const ctx = { editor, highlight, cursorBlock, minibuffer, minibufferPrompt, minibufferInput, minibufferCandidates, status };
+const ctx = { editor, highlight, currentLine, cursorBlock, minibuffer, minibufferPrompt, minibufferInput, minibufferCandidates, status };
 initializeEditorView(ctx);
 bindEditorKeys(ctx);
 

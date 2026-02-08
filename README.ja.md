@@ -149,6 +149,8 @@ theme:
   text_color: "#d4d4d4"
   cursor_color: "#528bff"
   selection_bg: "#264f78"
+  current_line_highlight: true
+  current_line_bg: "rgba(125, 207, 255, 0.25)"
   statusbar_bg: "#2d2d30"
   font_family: "'Cascadia Mono', 'Consolas', monospace"
   # background_image: "C:\\path\\to\\wallpaper.png"
@@ -162,6 +164,8 @@ theme:
 | `theme.text_color` | デフォルト文字色 | `"#d4d4d4"`, `white` |
 | `theme.cursor_color` | カーソル色 | `blue`, `"#528bff"` |
 | `theme.selection_bg` | 選択範囲の背景色 | `"#264f78"` |
+| `theme.current_line_highlight` | カーソル行ハイライト ON/OFF | `true`, `false` |
+| `theme.current_line_bg` | カーソル行ハイライト色 | `"rgba(125, 207, 255, 0.25)"` |
 | `theme.statusbar_bg` | ステータスバー背景色 | `"#2d2d30"` |
 | `theme.font_family` | フォント指定 | `"'Consolas', monospace"` |
 | `theme.background_image` | 背景画像パス | `"C:\\...\\image.png"` |

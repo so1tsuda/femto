@@ -14,6 +14,8 @@
 - `theme.text_color`
 - `theme.cursor_color`
 - `theme.selection_bg`
+- `theme.current_line_highlight` (true/false)
+- `theme.current_line_bg`
 - `theme.statusbar_bg`
 - `theme.background_image` (任意、ローカルパス/URL)
 - `theme.font_family` (例: `"'Consolas', 'MS Gothic', monospace"`)

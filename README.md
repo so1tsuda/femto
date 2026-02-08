@@ -149,6 +149,8 @@ theme:
   text_color: "#d4d4d4"
   cursor_color: "#528bff"
   selection_bg: "#264f78"
+  current_line_highlight: true
+  current_line_bg: "rgba(125, 207, 255, 0.25)"
   statusbar_bg: "#2d2d30"
   font_family: "'Cascadia Mono', 'Consolas', monospace"
   # background_image: "C:\\path\\to\\wallpaper.png"
@@ -162,6 +164,8 @@ theme:
 | `theme.text_color` | Default text color | `"#d4d4d4"`, `white` |
 | `theme.cursor_color` | Caret color | `blue`, `"#528bff"` |
 | `theme.selection_bg` | Selection highlight | `"#264f78"` |
+| `theme.current_line_highlight` | Highlight current line | `true`, `false` |
+| `theme.current_line_bg` | Current line highlight color | `"rgba(125, 207, 255, 0.25)"` |
 | `theme.statusbar_bg` | Status bar background | `"#2d2d30"` |
 | `theme.font_family` | Font stack | `"'Consolas', monospace"` |
 | `theme.background_image` | Background image path | `"C:\\...\\image.png"` |
