@@ -1,0 +1,3 @@
+# Ignore note files edited during app usage so `tauri dev` does not restart.
+*.md
+*.txt

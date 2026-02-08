@@ -1,0 +1,29 @@
+theme:
+  # Color value formats supported:
+  # 1) CSS color names: black, gray, white, blue, pink, etc.
+  # 2) Hex with '#': #1e1e1e, #ff66cc, #abc
+  # 3) Hex without '#': 1e1e1e, ff66cc, abc
+  # 4) Also valid CSS color functions: rgb(255, 0, 0), hsl(200 80% 40%)
+
+  # Background color of editor area and app body
+  background_color: black
+
+  # Default text color
+  text_color: white
+
+  # Caret color
+  cursor_color: blue
+
+  # Selection highlight
+  selection_bg: "#264f78"
+
+  # Status bar background
+  statusbar_bg: 2d2d30
+
+  # Minibuffer uses the same background/text color as the editor body.
+
+  # Optional: local file path or URL
+  # background_image: "C:\\Users\\foobar\\Pictures\\wallpaper.png"
+
+  # Font family used by editor/minibuffer/status
+  font_family: "'Cascadia Mono', 'Consolas', 'Yu Gothic UI', 'BIZ UDPGothic', 'Meiryo UI', 'Meiryo', monospace"

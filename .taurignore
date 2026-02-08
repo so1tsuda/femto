@@ -1,0 +1,5 @@
+# Ignore editable note files under the Tauri source tree during `tauri dev`.
+src-tauri/**/*.md
+src-tauri/**/*.txt
+src-tauri/*.md
+src-tauri/*.txt

@@ -1,0 +1,237 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --cursor-color: #800080;
+  --selection-bg: rgba(38, 79, 120, 0.45);
+  --statusbar-bg: #ffffff;
+  --minibuffer-bg: #ffffff;
+  --minibuffer-input-bg: #ffffff;
+  --minibuffer-border: #bdbdbd;
+  --minibuffer-focus: #6f6f6f;
+  --editor-font-size: 14px;
+  --editor-font-family: "Cascadia Mono", "Consolas", "Yu Gothic UI", "BIZ UDPGothic", "Meiryo UI", "Meiryo", monospace;
+  --tok-heading: #7dcfff;
+  --tok-quote: #8b949e;
+  --tok-list: #e0af68;
+  --tok-code: #9ece6a;
+  --tok-strong: #ff9e64;
+  --tok-em: #73daca;
+  --tok-link-text: #7aa2f7;
+  --tok-link-url: #2ac3de;
+  --tok-hr: #565f89;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--editor-font-family);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1;
+}
+
+.layout {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+}
+
+.editor-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#editor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  padding: 12px;
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1;
+  tab-size: 4;
+  overflow: auto;
+}
+
+#editor.ime-composing {
+  color: var(--text-color);
+}
+
+.cursor-block {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 1em;
+  background: var(--cursor-color);
+  pointer-events: none;
+  opacity: 0.85;
+  z-index: 4;
+}
+
+#editor::selection {
+  background: var(--selection-bg);
+}
+
+.highlight {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 12px;
+  border: none;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: pre;
+  word-break: normal;
+  color: var(--text-color);
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1;
+}
+
+.tok-md-heading {
+  color: var(--tok-heading);
+}
+
+.tok-md-quote {
+  color: var(--tok-quote);
+}
+
+.tok-md-list-marker {
+  color: var(--tok-list);
+}
+
+.tok-md-inline-code,
+.tok-md-code-block,
+.tok-md-fence {
+  color: var(--tok-code);
+}
+
+.tok-md-strong {
+  color: var(--tok-strong);
+}
+
+.tok-md-em {
+  color: var(--tok-em);
+}
+
+.tok-md-link-text {
+  color: var(--tok-link-text);
+}
+
+.tok-md-link-url {
+  color: var(--tok-link-url);
+}
+
+.tok-md-hr {
+  color: var(--tok-hr);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: var(--statusbar-bg);
+  min-height: 24px;
+  line-height: 1.3;
+  font-size: var(--editor-font-size);
+}
+
+.minibuffer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--minibuffer-bg);
+  border-top: 1px solid var(--minibuffer-border);
+}
+
+.minibuffer.hidden {
+  display: none;
+}
+
+.minibuffer-prompt {
+  color: var(--text-color);
+  white-space: nowrap;
+  font-size: var(--editor-font-size);
+  line-height: 1.2;
+}
+
+.minibuffer-input {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(var(--editor-font-size) * 1.6);
+  background: var(--minibuffer-input-bg);
+  color: var(--text-color);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 6px;
+  resize: none;
+  line-height: 1.4;
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+.minibuffer-input:focus {
+  outline: 1px solid var(--minibuffer-focus);
+}
+
+.minibuffer-candidates {
+  width: 100%;
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: var(--bg-color);
+  white-space: pre-wrap;
+  line-height: 1.35;
+  font-family: var(--editor-font-family);
+  font-size: calc(var(--editor-font-size) * 0.92);
+  color: var(--text-color);
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+.minibuffer-candidates.hidden {
+  display: none;
+}
+
+.minibuffer-candidate {
+  display: block;
+}
+
+.minibuffer-candidate.active {
+  color: #0047ab;
+}
