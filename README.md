@@ -138,7 +138,7 @@ Output:
 Femto uses a YAML configuration file located at:
 
 ```
-%APPDATA%\EmacsWin\config.yaml
+%APPDATA%\\Femto\\config.yaml
 ```
 
 ### Example Configuration

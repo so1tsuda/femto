@@ -1,7 +1,7 @@
 # Config File
 
 配置先:
-- `%APPDATA%\EmacsWin\config.yaml`
+- `%APPDATA%\\Femto\\config.yaml`
 
 形式:
 - YAML

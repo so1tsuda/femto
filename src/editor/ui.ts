@@ -1,7 +1,7 @@
 import type { EditorSnapshot, EditorUiContext } from "./types";
 import { highlightText } from "./syntax";
 
-const FONT_SIZE_KEY = "emacswin.editor.fontSizePx";
+const FONT_SIZE_KEY = "femto.editor.fontSizePx";
 const DEFAULT_FONT_SIZE = 14;
 const MIN_FONT_SIZE = 10;
 const MAX_FONT_SIZE = 32;

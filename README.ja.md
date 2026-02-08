@@ -138,7 +138,7 @@ npm run tauri build
 Femto は YAML 設定ファイルを使用します：
 
 ```
-%APPDATA%\EmacsWin\config.yaml
+%APPDATA%\\Femto\\config.yaml
 ```
 
 ### 設定例

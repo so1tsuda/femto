@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "EmacsWin",
+  "productName": "Femto",
   "version": "0.1.0",
-  "identifier": "com.emacswin.editor",
+  "identifier": "com.femto.editor",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "EmacsWin Editor",
+        "title": "Femto",
         "width": 1200,
         "height": 800,
         "resizable": true,

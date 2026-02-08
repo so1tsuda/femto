@@ -829,9 +829,9 @@ npm test
 ```json
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "EmacsWin",
+  "productName": "Femto",
   "version": "0.1.0",
-  "identifier": "com.emacswin.editor",
+  "identifier": "com.Femto.editor",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -841,7 +841,7 @@ npm test
   "app": {
     "windows": [
       {
-        "title": "EmacsWin Editor",
+        "title": "Femto Editor",
         "width": 1200,
         "height": 800,
         "resizable": true,
@@ -870,7 +870,7 @@ npm test
 {
   "$schema": "https://schema.tauri.app/capabilities/2",
   "identifier": "default",
-  "description": "Default capabilities for EmacsWin",
+  "description": "Default capabilities for Femto",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -961,7 +961,7 @@ npm test
 
 ## 11.3 設定ファイル
 
-**保存場所**: `%APPDATA%\EmacsWin\config.toml`
+**保存場所**: `%APPDATA%\Femto\config.toml`
 
 **v1.0での対応項目**:
 - フォントサイズ
@@ -969,7 +969,7 @@ npm test
 - カラースキーム（将来）
 
 ```toml
-# %APPDATA%\EmacsWin\config.toml
+# %APPDATA%\Femto\config.toml
 [editor]
 font_family = "Consolas"
 font_size = 14
@@ -992,7 +992,7 @@ default_line_ending = "auto"  # auto | lf | crlf
 
 ### 自動保存
 - **間隔**: 60秒ごと（変更がある場合のみ）
-- **保存先**: `%TEMP%\EmacsWin\autosave\`
+- **保存先**: `%TEMP%\Femto\autosave\`
 - **ファイル名**: `#<元ファイル名>#`（Emacs流）
 - **正常保存後**: 自動保存ファイルを削除
 
@@ -1137,3 +1137,4 @@ default_line_ending = "auto"  # auto | lf | crlf
 - **IME対応がTauriで自動**であることを強調
 - **Gap Bufferの実装例**を具体的に提示
 - **キーバインディング処理**の完全なコード例
+

@@ -1,4 +1,4 @@
-# Walkthrough: EmacsWin Editor 実装セッション記録
+# Walkthrough: Femto Editor 実装セッション記録
 
 更新日: 2026-02-08  
 対象ディレクトリ: `h:\マイドライブ\Apps\my-editor`

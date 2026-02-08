@@ -534,7 +534,7 @@ fn split_path_prefix(input: &str) -> (&str, &str) {
 fn resolve_config_path() -> Option<PathBuf> {
     if let Ok(appdata) = std::env::var("APPDATA") {
         if !appdata.trim().is_empty() {
-            return Some(PathBuf::from(appdata).join("EmacsWin").join("config.yaml"));
+            return Some(PathBuf::from(appdata).join("Femto").join("config.yaml"));
         }
     }
     None
