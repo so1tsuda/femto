@@ -266,6 +266,16 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
 
     const key = eventKey(event);
 
+    if (keyState.ctrlXPrefix) {
+      event.preventDefault();
+      try {
+        await handleCtrlXCommand(key);
+      } catch (error) {
+        await renderError(error);
+      }
+      return;
+    }
+
     const isUndoShortcut = event.ctrlKey && !event.altKey && (
       (key === "/" && !event.shiftKey) || key === "_"
     );
@@ -456,16 +466,6 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
       event.preventDefault();
       keyState.ctrlXPrefix = true;
       await renderWithPrefix();
-      return;
-    }
-
-    if (keyState.ctrlXPrefix && !event.altKey && key.length === 1) {
-      event.preventDefault();
-      try {
-        await handleCtrlXCommand(key);
-      } catch (error) {
-        await renderError(error);
-      }
       return;
     }
 
