@@ -199,6 +199,14 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
       return true;
     }
 
+    if (key === "h") {
+      markPosition = 0;
+      await syncCursorFromDom();
+      const snapshot = await runEditorCommand("move_to_buffer_end");
+      renderAndTrack(snapshot, "Mark set", true);
+      return true;
+    }
+
     await renderWithPrefix();
     return true;
   };

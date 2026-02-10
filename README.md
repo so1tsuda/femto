@@ -125,6 +125,7 @@ Output:
 | `C-x C-s` | Save file |
 | `C-x C-w` | Save file as... |
 | `C-x C-c` | Quit |
+| `C-x h` | Mark whole buffer (Select all) |
 | `C-s` | Incremental search (forward) |
 | `C-r` | Incremental search (reverse) |
 | `M-%` | Query replace |
@@ -134,8 +135,6 @@ Output:
 ---
 
 ## Configuration
-
-Femto uses a YAML configuration file located at:
 
 ```
 %APPDATA%\\Femto\\config.yaml
