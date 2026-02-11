@@ -138,7 +138,7 @@ export function promptMinibuffer(
 
         void (async () => {
           const current = ctx.minibufferInput.value;
-          if (current !== lastCompletionBase) {
+          if (current !== lastCompletionBase && !completionPanelVisible) {
             completionCandidates = await completer(current);
             completionIndex = -1;
             lastCompletionBase = current;
@@ -156,13 +156,28 @@ export function promptMinibuffer(
           }
 
           if (tabPrimed) {
-            completionPanelVisible = !completionPanelVisible;
+            completionPanelVisible = true;
             tabPrimed = false;
+            completionIndex = 0;
+            const selected = completionCandidates[completionIndex];
+            ctx.minibufferInput.value = selected;
+            ctx.minibufferInput.selectionStart = selected.length;
+            ctx.minibufferInput.selectionEnd = selected.length;
             renderCandidates();
             return;
           }
 
-          completionPanelVisible = !completionPanelVisible;
+          if (completionPanelVisible && completionCandidates.length > 0) {
+            completionIndex = (completionIndex + 1) % completionCandidates.length;
+            const selected = completionCandidates[completionIndex];
+            ctx.minibufferInput.value = selected;
+            ctx.minibufferInput.selectionStart = selected.length;
+            ctx.minibufferInput.selectionEnd = selected.length;
+            renderCandidates();
+            return;
+          }
+
+          completionPanelVisible = true;
           renderCandidates();
         })();
         return;
