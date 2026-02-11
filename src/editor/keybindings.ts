@@ -2,6 +2,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   defaultSaveDirectory,
   fileExists,
+  killBuffer,
   listBuffers,
   openFile,
   pathCompletions,
@@ -226,11 +227,54 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
       });
 
       const target = chosen ?? defaultBuf;
+      if (target !== bufInfo.current) {
+        const snapshot = await runEditorCommand("noop");
+        if (snapshot.modified) {
+          const ok = window.confirm("Current buffer is modified. Switch anyway?");
+          if (!ok) {
+            await renderWithPrefix();
+            return true;
+          }
+        }
+      }
       try {
         const snapshot = await switchBuffer(target);
         renderAndTrack(snapshot);
       } catch {
         await renderWithPrefix();
+      }
+      return true;
+    }
+
+    if (key === "k") {
+      const bufInfo = await listBuffers();
+      const prompt = `Kill buffer (default ${bufInfo.current}): `;
+      const chosen = await promptMinibuffer(ctx, prompt, "", {
+        completer: async (input: string): Promise<string[]> => {
+          const info = await listBuffers();
+          if (!input) return info.names;
+          const lower = input.toLowerCase();
+          return info.names.filter((n) => n.toLowerCase().startsWith(lower));
+        },
+      });
+
+      const target = chosen ?? bufInfo.current;
+      try {
+        const snapshot = await killBuffer(target, false);
+        renderAndTrack(snapshot);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("Confirmation required")) {
+          const ok = window.confirm(`Buffer '${target}' is modified. Kill anyway?`);
+          if (!ok) {
+            await renderWithPrefix();
+            return true;
+          }
+          const snapshot = await killBuffer(target, true);
+          renderAndTrack(snapshot);
+          return true;
+        }
+        throw error;
       }
       return true;
     }

@@ -43,7 +43,8 @@ fn main() {
             commands::save_file,
             commands::save_file_as,
             commands::switch_buffer,
-            commands::list_buffers
+            commands::list_buffers,
+            commands::kill_buffer
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");

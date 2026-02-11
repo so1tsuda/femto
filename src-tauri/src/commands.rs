@@ -55,6 +55,13 @@ pub struct QueryReplaceStepPayload {
     action: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KillBufferPayload {
+    name: Option<String>,
+    force: Option<bool>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryReplaceResponse {
@@ -671,4 +678,18 @@ pub fn list_buffers(
         current: editor.current().name(),
         default_switch: editor.default_switch_name(),
     })
+}
+
+#[tauri::command]
+pub fn kill_buffer(
+    payload: KillBufferPayload,
+    state: State<'_, Mutex<EditorState>>,
+) -> Result<EditorSnapshot, String> {
+    let mut editor = state
+        .lock()
+        .map_err(|_| "state lock poisoned".to_string())?;
+    let force = payload.force.unwrap_or(false);
+    let name = payload.name.as_deref();
+    editor.kill_buffer(name, force)?;
+    Ok(editor.snapshot())
 }

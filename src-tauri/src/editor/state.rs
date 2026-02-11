@@ -298,4 +298,85 @@ impl EditorState {
                 .unwrap_or_else(|| self.current().name())
         }
     }
+
+    pub fn kill_buffer(&mut self, name: Option<&str>, force: bool) -> Result<String, String> {
+        let target_index = match name {
+            Some(name) if !name.trim().is_empty() => self
+                .buffers
+                .iter()
+                .position(|b| b.name() == name)
+                .ok_or_else(|| format!("No buffer named '{}'", name))?,
+            _ => self.current_index,
+        };
+
+        if self.buffers[target_index].modified && !force {
+            return Err("Buffer modified. Confirmation required.".to_string());
+        }
+
+        let killed_name = self.buffers[target_index].name();
+        self.buffers.remove(target_index);
+
+        if self.buffers.is_empty() {
+            self.buffers.push(BufferState::new());
+            self.current_index = 0;
+            self.prev_index = 0;
+            self.current_mut()
+                .set_status_message(Some(format!("Killed {}", killed_name)));
+            return Ok(killed_name);
+        }
+
+        if target_index < self.current_index {
+            self.current_index -= 1;
+        } else if target_index == self.current_index && self.current_index >= self.buffers.len() {
+            self.current_index = self.buffers.len() - 1;
+        }
+
+        if self.prev_index == target_index {
+            self.prev_index = self.current_index;
+        } else if target_index < self.prev_index {
+            self.prev_index -= 1;
+        }
+
+        if self.prev_index >= self.buffers.len() {
+            self.prev_index = self.current_index;
+        }
+
+        self.current_mut()
+            .set_status_message(Some(format!("Killed {}", killed_name)));
+        Ok(killed_name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BufferState, EditorState};
+    use std::path::PathBuf;
+
+    #[test]
+    fn kill_current_modified_requires_force() {
+        let mut editor = EditorState::new();
+        editor.current_mut().modified = true;
+        let err = editor.kill_buffer(None, false).expect_err("expected confirmation error");
+        assert!(err.contains("Confirmation required"));
+    }
+
+    #[test]
+    fn kill_named_buffer_updates_current_and_prev() {
+        let mut editor = EditorState::new();
+
+        let mut a = BufferState::new();
+        a.set_file_path(PathBuf::from("a.txt"));
+        editor.buffers.push(a);
+        let mut b = BufferState::new();
+        b.set_file_path(PathBuf::from("b.txt"));
+        editor.buffers.push(b);
+
+        editor.current_index = 2;
+        editor.prev_index = 1;
+
+        let killed = editor.kill_buffer(Some("a.txt"), true).expect("kill should succeed");
+        assert_eq!(killed, "a.txt");
+        assert_eq!(editor.current().name(), "b.txt");
+        assert_eq!(editor.default_switch_name(), "*scratch*");
+    }
 }

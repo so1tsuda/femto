@@ -51,7 +51,7 @@ Femto was born from a simple desire: **to edit notes and text with real Emacs ke
 | Feature | Description |
 |---------|-------------|
 | Emacs navigation | `C-a/e`, `C-f/b`, `C-n/p`, `M-f/b`, `M-</>` |
-| File operations | `C-x C-f` (open), `C-x C-s` (save), `C-x C-w` (save as), `C-x C-c` (quit) |
+| File operations | `C-x C-f` (open), `C-x C-s` (save), `C-x C-w` (save as), `C-x C-c` (quit), `C-x k` (kill buffer) |
 | Region/Mark | `C-Space` to set mark, `C-w` cut, `M-w` copy, `C-y` paste |
 | Undo/Redo | `C-/` or `C-_` to undo, `C-Shift-/` to redo |
 | Search | `C-s` (forward), `C-r` (reverse), `M-%` (query-replace) |
@@ -128,6 +128,7 @@ Output:
 | `C-x C-w` | Save file as... |
 | `C-x C-c` | Quit |
 | `C-x b` | Switch buffer |
+| `C-x k` | Kill buffer |
 | `C-x h` | Mark whole buffer (Select all) |
 | `C-s` | Incremental search (forward) |
 | `C-r` | Incremental search (reverse) |

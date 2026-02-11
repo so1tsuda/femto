@@ -93,3 +93,12 @@ export async function switchBuffer(name: string): Promise<EditorSnapshot> {
 export async function listBuffers(): Promise<BufferListResponse> {
   return invoke<BufferListResponse>("list_buffers");
 }
+
+export async function killBuffer(name?: string | null, force = false): Promise<EditorSnapshot> {
+  return invoke<EditorSnapshot>("kill_buffer", {
+    payload: {
+      name: name ?? null,
+      force,
+    },
+  });
+}
