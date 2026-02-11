@@ -355,11 +355,10 @@ function createCaretMeasurer(editor: HTMLTextAreaElement): ((cursor: number) => 
     mirror.textContent = "";
     mirror.append(document.createTextNode(head));
     const span = document.createElement("span");
-    span.textContent = "\u200b";
+    // Keep wrapping behavior identical to textarea by placing the remainder in the span.
+    // For end-of-text, use a visible placeholder so span still has measurable geometry.
+    span.textContent = tail.length > 0 ? tail : ".";
     mirror.appendChild(span);
-    if (tail.length > 0) {
-      mirror.append(document.createTextNode(tail));
-    }
     const spanRect = span.getBoundingClientRect();
     const top = spanRect.top - rect.top - editor.scrollTop;
     const left = spanRect.left - rect.left - editor.scrollLeft;
