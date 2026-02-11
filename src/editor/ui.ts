@@ -65,12 +65,8 @@ export function recenterTopBottom(ctx: EditorUiContext): "center" | "top" | "bot
   const next = (prev + 1) % 3;
   RECENTER_STATE.set(ctx.editor, next);
 
-  const style = getComputedStyle(ctx.editor);
-  const lineHeight = Number.parseFloat(style.lineHeight) || 22;
-  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
-  const cursor = ctx.editor.selectionEnd;
-  const lineIndex = (ctx.editor.value.slice(0, cursor).match(/\n/g) ?? []).length;
-  const caretY = paddingTop + lineIndex * lineHeight;
+  const { top: caretTopRel, lineHeight } = measureCaretPosition(ctx.editor);
+  const caretY = caretTopRel + ctx.editor.scrollTop;
   const viewportHeight = ctx.editor.clientHeight;
 
   let target = 0;
@@ -79,10 +75,10 @@ export function recenterTopBottom(ctx: EditorUiContext): "center" | "top" | "bot
     target = caretY - viewportHeight / 2 + lineHeight / 2;
     mode = "center";
   } else if (next === 1) {
-    target = caretY - paddingTop;
+    target = caretY;
     mode = "top";
   } else {
-    target = caretY - viewportHeight + lineHeight + paddingTop;
+    target = caretY - viewportHeight + lineHeight;
     mode = "bottom";
   }
 
@@ -93,12 +89,82 @@ export function recenterTopBottom(ctx: EditorUiContext): "center" | "top" | "bot
   return mode;
 }
 
-function ensureCursorVisible(ctx: EditorUiContext, line: number): void {
-  const style = getComputedStyle(ctx.editor);
-  const lineHeight = Number.parseFloat(style.lineHeight) || 22;
-  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
-  const lineIndex = Math.max(0, line - 1);
-  const caretTop = paddingTop + lineIndex * lineHeight;
+export function moveCursorByVisualLine(ctx: EditorUiContext, direction: -1 | 1): number {
+  const editor = ctx.editor;
+  const textLength = editor.value.length;
+  const current = editor.selectionEnd;
+  const currentPos = measureCaretPositionAt(editor, current);
+  const epsilon = 0.5;
+
+  const measurer = createCaretMeasurer(editor);
+  const cache = new Map<number, { top: number; left: number; lineHeight: number }>();
+  const measure = (cursor: number): { top: number; left: number; lineHeight: number } => {
+    const clamped = Math.max(0, Math.min(textLength, cursor));
+    const cached = cache.get(clamped);
+    if (cached) {
+      return cached;
+    }
+    const measured = measurer(clamped);
+    cache.set(clamped, measured);
+    return measured;
+  };
+
+  let target = current;
+
+  if (direction > 0) {
+    let idx = current + 1;
+    while (idx <= textLength && measure(idx).top <= currentPos.top + epsilon) {
+      idx += 1;
+    }
+    if (idx <= textLength) {
+      const targetTop = measure(idx).top;
+      let best = idx;
+      let bestDx = Math.abs(measure(idx).left - currentPos.left);
+      idx += 1;
+      while (idx <= textLength && Math.abs(measure(idx).top - targetTop) <= epsilon) {
+        const dx = Math.abs(measure(idx).left - currentPos.left);
+        if (dx < bestDx) {
+          bestDx = dx;
+          best = idx;
+        }
+        idx += 1;
+      }
+      target = best;
+    }
+  } else {
+    let idx = current - 1;
+    while (idx >= 0 && measure(idx).top >= currentPos.top - epsilon) {
+      idx -= 1;
+    }
+    if (idx >= 0) {
+      const targetTop = measure(idx).top;
+      let rowStart = idx;
+      while (rowStart - 1 >= 0 && Math.abs(measure(rowStart - 1).top - targetTop) <= epsilon) {
+        rowStart -= 1;
+      }
+      let best = rowStart;
+      let bestDx = Math.abs(measure(rowStart).left - currentPos.left);
+      let j = rowStart + 1;
+      while (j <= idx) {
+        const dx = Math.abs(measure(j).left - currentPos.left);
+        if (dx < bestDx) {
+          bestDx = dx;
+          best = j;
+        }
+        j += 1;
+      }
+      target = best;
+    }
+  }
+
+  measurer.dispose();
+  return target;
+}
+
+function ensureCursorVisible(ctx: EditorUiContext, _line: number): void {
+  const { top: caretTopRel, lineHeight } = measureCaretPosition(ctx.editor);
+  const paddingTop = Number.parseFloat(getComputedStyle(ctx.editor).paddingTop) || 0;
+  const caretTop = caretTopRel + ctx.editor.scrollTop;
   const caretBottom = caretTop + lineHeight;
 
   const viewTop = ctx.editor.scrollTop;
@@ -118,20 +184,14 @@ function syncOverlayScroll(ctx: EditorUiContext): void {
   ctx.highlight.scrollLeft = ctx.editor.scrollLeft;
 }
 
-function updateCurrentLine(ctx: EditorUiContext, cursorIndex: number): void {
+function updateCurrentLine(ctx: EditorUiContext, _cursorIndex: number): void {
   const enabled = document.documentElement.getAttribute("data-current-line") !== "off";
   if (!enabled) {
     ctx.currentLine.style.display = "none";
     return;
   }
 
-  const style = getComputedStyle(ctx.editor);
-  const lineHeight = Number.parseFloat(style.lineHeight) || 22;
-  const paddingTop = Number.parseFloat(style.paddingTop) || 0;
-  const text = ctx.editor.value;
-  const cursor = Math.min(Math.max(0, cursorIndex), text.length);
-  const lineIndex = (text.slice(0, cursor).match(/\n/g) ?? []).length;
-  const top = paddingTop + lineIndex * lineHeight - ctx.editor.scrollTop;
+  const { top, lineHeight } = measureCaretPosition(ctx.editor);
 
   ctx.currentLine.style.display = "block";
   ctx.currentLine.style.transform = `translateY(${top}px)`;
@@ -150,13 +210,25 @@ function updateCursorBlock(ctx: EditorUiContext): void {
 }
 
 function measureCaretPosition(editor: HTMLTextAreaElement): { top: number; left: number; lineHeight: number } {
+  return measureCaretPositionAt(editor, editor.selectionEnd);
+}
+
+function measureCaretPositionAt(editor: HTMLTextAreaElement, cursor: number): { top: number; left: number; lineHeight: number } {
+  const measurer = createCaretMeasurer(editor);
+  const measured = measurer(cursor);
+  measurer.dispose();
+  return measured;
+}
+
+function createCaretMeasurer(editor: HTMLTextAreaElement): ((cursor: number) => { top: number; left: number; lineHeight: number }) & { dispose: () => void } {
   const style = getComputedStyle(editor);
   const mirror = document.createElement("div");
   const rect = editor.getBoundingClientRect();
 
   mirror.style.position = "fixed";
   mirror.style.visibility = "hidden";
-  mirror.style.whiteSpace = "pre";
+  mirror.style.whiteSpace = "pre-wrap";
+  mirror.style.wordBreak = "break-word";
   mirror.style.overflow = "hidden";
   mirror.style.font = style.font;
   mirror.style.lineHeight = style.lineHeight;
@@ -170,21 +242,27 @@ function measureCaretPosition(editor: HTMLTextAreaElement): { top: number; left:
   mirror.style.top = `${rect.top}px`;
   mirror.style.tabSize = style.tabSize;
 
-  const cursor = editor.selectionEnd;
-  mirror.textContent = editor.value.slice(0, cursor);
-
-  const span = document.createElement("span");
-  span.textContent = "\u200b";
-  mirror.appendChild(span);
   document.body.appendChild(mirror);
-
-  const spanRect = span.getBoundingClientRect();
   const lineHeight = Number.parseFloat(style.lineHeight) || 22;
-  const top = spanRect.top - rect.top - editor.scrollTop;
-  const left = spanRect.left - rect.left - editor.scrollLeft;
+  const value = editor.value;
 
-  mirror.remove();
-  return { top, left, lineHeight };
+  const measure = ((cursor: number): { top: number; left: number; lineHeight: number } => {
+    const clamped = Math.max(0, Math.min(value.length, cursor));
+    mirror.textContent = value.slice(0, clamped);
+    const span = document.createElement("span");
+    span.textContent = "\u200b";
+    mirror.appendChild(span);
+    const spanRect = span.getBoundingClientRect();
+    const top = spanRect.top - rect.top - editor.scrollTop;
+    const left = spanRect.left - rect.left - editor.scrollLeft;
+    return { top, left, lineHeight };
+  }) as ((cursor: number) => { top: number; left: number; lineHeight: number }) & { dispose: () => void };
+
+  measure.dispose = (): void => {
+    mirror.remove();
+  };
+
+  return measure;
 }
 
 function getEditorFontSize(): number {

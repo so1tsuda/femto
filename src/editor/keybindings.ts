@@ -14,7 +14,7 @@ import {
   switchBuffer,
 } from "./commands";
 import { promptMinibuffer } from "./minibuffer";
-import { adjustEditorFontSize, recenterTopBottom, renderSnapshot } from "./ui";
+import { adjustEditorFontSize, moveCursorByVisualLine, recenterTopBottom, renderSnapshot } from "./ui";
 import type { EditorSnapshot, EditorUiContext } from "./types";
 
 interface KeyState {
@@ -502,6 +502,20 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
         const mode = recenterTopBottom(ctx);
         const snapshot = await runEditorCommand("noop");
         renderAndTrack(snapshot, `Recenter: ${mode}`);
+      } catch (error) {
+        await renderError(error);
+      }
+      return;
+    }
+
+    if (event.ctrlKey && !event.altKey && (key === "n" || key === "p")) {
+      event.preventDefault();
+      try {
+        const direction: -1 | 1 = key === "n" ? 1 : -1;
+        const nextCursor = moveCursorByVisualLine(ctx, direction);
+        const snapshot = await runEditorCommand("set_cursor", { cursor: nextCursor });
+        const preserveMarkSelection = markPosition !== null;
+        renderAndTrack(snapshot, undefined, preserveMarkSelection);
       } catch (error) {
         await renderError(error);
       }
