@@ -93,6 +93,9 @@ export function moveCursorByVisualLine(ctx: EditorUiContext, direction: -1 | 1):
   const editor = ctx.editor;
   const textLength = editor.value.length;
   const current = editor.selectionEnd;
+  if (textLength === 0) {
+    return 0;
+  }
   const currentPos = measureCaretPositionAt(editor, current);
   const epsilon = 0.5;
 
@@ -109,56 +112,154 @@ export function moveCursorByVisualLine(ctx: EditorUiContext, direction: -1 | 1):
     return measured;
   };
 
-  let target = current;
+  const currentTop = currentPos.top;
+  const probe =
+    direction > 0
+      ? findFirstIndexWithTopGreater(current, textLength, currentTop + epsilon, measure)
+      : findLastIndexWithTopLess(current, currentTop - epsilon, measure);
 
-  if (direction > 0) {
-    let idx = current + 1;
-    while (idx <= textLength && measure(idx).top <= currentPos.top + epsilon) {
-      idx += 1;
-    }
-    if (idx <= textLength) {
-      const targetTop = measure(idx).top;
-      let best = idx;
-      let bestDx = Math.abs(measure(idx).left - currentPos.left);
-      idx += 1;
-      while (idx <= textLength && Math.abs(measure(idx).top - targetTop) <= epsilon) {
-        const dx = Math.abs(measure(idx).left - currentPos.left);
-        if (dx < bestDx) {
-          bestDx = dx;
-          best = idx;
-        }
-        idx += 1;
-      }
-      target = best;
-    }
-  } else {
-    let idx = current - 1;
-    while (idx >= 0 && measure(idx).top >= currentPos.top - epsilon) {
-      idx -= 1;
-    }
-    if (idx >= 0) {
-      const targetTop = measure(idx).top;
-      let rowStart = idx;
-      while (rowStart - 1 >= 0 && Math.abs(measure(rowStart - 1).top - targetTop) <= epsilon) {
-        rowStart -= 1;
-      }
-      let best = rowStart;
-      let bestDx = Math.abs(measure(rowStart).left - currentPos.left);
-      let j = rowStart + 1;
-      while (j <= idx) {
-        const dx = Math.abs(measure(j).left - currentPos.left);
-        if (dx < bestDx) {
-          bestDx = dx;
-          best = j;
-        }
-        j += 1;
-      }
-      target = best;
-    }
+  if (probe === null) {
+    measurer.dispose();
+    return direction > 0 ? textLength : 0;
   }
+
+  const targetTop = measure(probe).top;
+  const rowStart = findRowStart(probe, targetTop, measure);
+  const rowEnd = findRowEnd(probe, textLength, targetTop, measure);
+  const target = findClosestLeftInRow(rowStart, rowEnd, currentPos.left, measure);
 
   measurer.dispose();
   return target;
+}
+
+function findFirstIndexWithTopGreater(
+  start: number,
+  max: number,
+  threshold: number,
+  measure: (cursor: number) => { top: number; left: number; lineHeight: number },
+): number | null {
+  if (start >= max) {
+    return null;
+  }
+
+  let low = start + 1;
+  let high = Math.min(max, low + 16);
+
+  while (high < max && measure(high).top <= threshold) {
+    low = high + 1;
+    high = Math.min(max, high + (high - start) * 2);
+  }
+
+  if (measure(high).top <= threshold) {
+    return null;
+  }
+
+  let left = low;
+  let right = high;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (measure(mid).top > threshold) {
+      right = mid;
+    } else {
+      left = mid + 1;
+    }
+  }
+  return left;
+}
+
+function findLastIndexWithTopLess(
+  start: number,
+  threshold: number,
+  measure: (cursor: number) => { top: number; left: number; lineHeight: number },
+): number | null {
+  if (start <= 0) {
+    return null;
+  }
+
+  let high = start - 1;
+  let low = Math.max(0, high - 16);
+
+  while (low > 0 && measure(low).top >= threshold) {
+    high = low - 1;
+    low = Math.max(0, low - (start - low) * 2);
+  }
+
+  if (measure(low).top >= threshold) {
+    return null;
+  }
+
+  let left = low;
+  let right = high;
+  while (left < right) {
+    const mid = Math.ceil((left + right) / 2);
+    if (measure(mid).top < threshold) {
+      left = mid;
+    } else {
+      right = mid - 1;
+    }
+  }
+  return left;
+}
+
+function findRowStart(
+  probe: number,
+  rowTop: number,
+  measure: (cursor: number) => { top: number; left: number; lineHeight: number },
+): number {
+  let left = 0;
+  let right = probe;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (measure(mid).top >= rowTop - 0.5) {
+      right = mid;
+    } else {
+      left = mid + 1;
+    }
+  }
+  return left;
+}
+
+function findRowEnd(
+  probe: number,
+  max: number,
+  rowTop: number,
+  measure: (cursor: number) => { top: number; left: number; lineHeight: number },
+): number {
+  let left = probe;
+  let right = max;
+  while (left < right) {
+    const mid = Math.ceil((left + right) / 2);
+    if (measure(mid).top <= rowTop + 0.5) {
+      left = mid;
+    } else {
+      right = mid - 1;
+    }
+  }
+  return left;
+}
+
+function findClosestLeftInRow(
+  start: number,
+  end: number,
+  targetLeft: number,
+  measure: (cursor: number) => { top: number; left: number; lineHeight: number },
+): number {
+  let left = start;
+  let right = end;
+  while (left < right) {
+    const mid = Math.floor((left + right) / 2);
+    if (measure(mid).left < targetLeft) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+
+  const candidateA = left;
+  const candidateB = Math.max(start, left - 1);
+  const diffA = Math.abs(measure(candidateA).left - targetLeft);
+  const diffB = Math.abs(measure(candidateB).left - targetLeft);
+  return diffB <= diffA ? candidateB : candidateA;
 }
 
 function ensureCursorVisible(ctx: EditorUiContext, _line: number): void {
@@ -229,6 +330,7 @@ function createCaretMeasurer(editor: HTMLTextAreaElement): ((cursor: number) => 
   mirror.style.visibility = "hidden";
   mirror.style.whiteSpace = "pre-wrap";
   mirror.style.wordBreak = "break-word";
+  mirror.style.overflowWrap = "anywhere";
   mirror.style.overflow = "hidden";
   mirror.style.font = style.font;
   mirror.style.lineHeight = style.lineHeight;
@@ -248,10 +350,16 @@ function createCaretMeasurer(editor: HTMLTextAreaElement): ((cursor: number) => 
 
   const measure = ((cursor: number): { top: number; left: number; lineHeight: number } => {
     const clamped = Math.max(0, Math.min(value.length, cursor));
-    mirror.textContent = value.slice(0, clamped);
+    const head = value.slice(0, clamped);
+    const tail = value.slice(clamped);
+    mirror.textContent = "";
+    mirror.append(document.createTextNode(head));
     const span = document.createElement("span");
     span.textContent = "\u200b";
     mirror.appendChild(span);
+    if (tail.length > 0) {
+      mirror.append(document.createTextNode(tail));
+    }
     const spanRect = span.getBoundingClientRect();
     const top = spanRect.top - rect.top - editor.scrollTop;
     const left = spanRect.left - rect.left - editor.scrollLeft;
