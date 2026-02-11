@@ -24,8 +24,8 @@ fn main() {
                 };
                 paths.push(resolved.to_string_lossy().to_string());
             }
-            if let Some(first) = paths.first() {
-                let _ = app.emit("open-file", first.clone());
+            for path_str in &paths {
+                let _ = app.emit("open-file", path_str.clone());
             }
             Ok(())
         })

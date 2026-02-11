@@ -2,7 +2,7 @@ import "./styles/main.css";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { loadAndApplyAppConfig } from "./editor/config";
-import { initializeEditor, openFile, runEditorCommand } from "./editor/commands";
+import { initializeEditor, openFile } from "./editor/commands";
 import { bindEditorKeys } from "./editor/keybindings";
 import { initializeEditorView, renderSnapshot } from "./editor/ui";
 
@@ -110,21 +110,14 @@ getCurrentWindow().onDragDropEvent(async (event) => {
       return;
     }
 
-    const filePath = paths[0];
-
     try {
-      const snapshot = await runEditorCommand("noop");
-      if (snapshot.modified) {
-        const ok = window.confirm(
-          "Buffer is modified. Discard changes and open the dropped file?"
-        );
-        if (!ok) {
-          return;
-        }
+      let lastSnapshot = null;
+      for (const filePath of paths) {
+        lastSnapshot = await openFile(filePath);
       }
-
-      const opened = await openFile(filePath);
-      renderSnapshot(ctx, opened);
+      if (lastSnapshot) {
+        renderSnapshot(ctx, lastSnapshot);
+      }
       editor.focus();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
