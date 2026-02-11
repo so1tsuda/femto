@@ -138,47 +138,33 @@ export function promptMinibuffer(
 
         void (async () => {
           const current = ctx.minibufferInput.value;
-          if (current !== lastCompletionBase && !completionPanelVisible) {
+
+          // If panel is not yet visible, fetch candidates and show the panel
+          if (!completionPanelVisible) {
             completionCandidates = await completer(current);
             completionIndex = -1;
             lastCompletionBase = current;
-            completionPanelVisible = false;
-            tabPrimed = true;
-            renderCandidates();
-            return;
-          }
 
-          if (completionCandidates.length === 0) {
-            completionPanelVisible = false;
-            tabPrimed = false;
-            renderCandidates();
-            return;
-          }
+            if (completionCandidates.length === 0) {
+              completionPanelVisible = false;
+              renderCandidates();
+              return;
+            }
 
-          if (tabPrimed) {
             completionPanelVisible = true;
-            tabPrimed = false;
-            completionIndex = 0;
-            const selected = completionCandidates[completionIndex];
-            ctx.minibufferInput.value = selected;
-            ctx.minibufferInput.selectionStart = selected.length;
-            ctx.minibufferInput.selectionEnd = selected.length;
             renderCandidates();
             return;
           }
 
-          if (completionPanelVisible && completionCandidates.length > 0) {
+          // Panel is visible — cycle through candidates
+          if (completionCandidates.length > 0) {
             completionIndex = (completionIndex + 1) % completionCandidates.length;
             const selected = completionCandidates[completionIndex];
             ctx.minibufferInput.value = selected;
             ctx.minibufferInput.selectionStart = selected.length;
             ctx.minibufferInput.selectionEnd = selected.length;
             renderCandidates();
-            return;
           }
-
-          completionPanelVisible = true;
-          renderCandidates();
         })();
         return;
       }
