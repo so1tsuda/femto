@@ -61,6 +61,8 @@ Femto was born from a simple desire: **to edit notes and text with real Emacs ke
 - 📁 **Smart minibuffer** — Tab completion with candidate list
 - 💾 **Auto backup** — Creates `filename~` on save
 - 🎨 **Themeable UI** — Colors, fonts, and background images
+- 🖱️ **Drag & drop** — Open files by dragging them into the editor window
+- 🗂️ **Multiple buffers** — Switch between open files with `C-x b`
 
 ---
 
@@ -125,6 +127,7 @@ Output:
 | `C-x C-s` | Save file |
 | `C-x C-w` | Save file as... |
 | `C-x C-c` | Quit |
+| `C-x b` | Switch buffer |
 | `C-x h` | Mark whole buffer (Select all) |
 | `C-s` | Incremental search (forward) |
 | `C-r` | Incremental search (reverse) |
@@ -210,7 +213,7 @@ femto/
 
 ## Roadmap
 
-- [ ] Multiple buffers / split windows
+- [ ] Split windows
 - [ ] Plugin system
 - [ ] More language syntax highlighting
 - [ ] macOS / Linux support
