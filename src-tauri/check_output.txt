@@ -1,0 +1,14 @@
+    Checking femto v0.1.0 (C:\Users\so1_t\app\my-editor\src-tauri)
+warning: method `push_kill_ring` is never used
+   --> src\editor\state.rs:244:12
+    |
+200 | impl EditorState {
+    | ---------------- method in this implementation
+...
+244 |     pub fn push_kill_ring(&mut self, text: String) {
+    |            ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `femto` (bin "femto") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.02s

@@ -1,10 +1,10 @@
-use crate::editor::state::EditorState;
+use crate::editor::state::BufferState;
 
 fn is_word_char(ch: char) -> bool {
     ch.is_alphanumeric() || ch == '_'
 }
 
-impl EditorState {
+impl BufferState {
     pub fn move_forward(&mut self) {
         if self.cursor < self.buffer.char_len() {
             self.cursor += 1;

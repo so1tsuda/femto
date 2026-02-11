@@ -79,3 +79,17 @@ export async function startQueryReplace(query: string, replaceWith: string): Pro
 export async function queryReplaceStep(action: "y" | "n" | "!" | "q"): Promise<QueryReplaceResponse> {
   return invoke<QueryReplaceResponse>("query_replace_step", { payload: { action } });
 }
+
+export interface BufferListResponse {
+  names: string[];
+  current: string;
+  defaultSwitch: string;
+}
+
+export async function switchBuffer(name: string): Promise<EditorSnapshot> {
+  return invoke<EditorSnapshot>("switch_buffer", { name });
+}
+
+export async function listBuffers(): Promise<BufferListResponse> {
+  return invoke<BufferListResponse>("list_buffers");
+}

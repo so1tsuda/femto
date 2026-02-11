@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::editor::state::EditorState;
+use crate::editor::state::BufferState;
 
 #[derive(Debug, Clone)]
 pub struct QueryReplaceSession {
@@ -20,7 +20,7 @@ pub struct QueryReplaceStatus {
     pub message: String,
 }
 
-impl EditorState {
+impl BufferState {
     pub fn isearch_forward(&mut self, query: &str) -> Result<(), String> {
         if query.is_empty() {
             return Err("search query is empty".to_string());

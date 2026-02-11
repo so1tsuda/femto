@@ -41,7 +41,9 @@ fn main() {
             commands::path_completions,
             commands::load_app_config,
             commands::save_file,
-            commands::save_file_as
+            commands::save_file_as,
+            commands::switch_buffer,
+            commands::list_buffers
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");

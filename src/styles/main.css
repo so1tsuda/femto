@@ -77,6 +77,8 @@ body {
   font-feature-settings: "kern" 1;
   tab-size: 4;
   overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
   z-index: 3;
 }
 
@@ -117,8 +119,8 @@ body {
   border: none;
   pointer-events: none;
   overflow: hidden;
-  white-space: pre;
-  word-break: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
   color: var(--text-color);
   font-family: var(--editor-font-family);
   font-size: var(--editor-font-size);
@@ -246,4 +248,9 @@ body {
 
 .minibuffer-candidate.active {
   color: #0047ab;
+}
+
+#app.drag-over {
+  outline: 3px solid rgba(122, 162, 247, 0.7);
+  outline-offset: -3px;
 }

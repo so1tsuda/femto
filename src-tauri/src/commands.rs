@@ -129,47 +129,59 @@ pub fn editor_command(
     match command.as_str() {
         "noop" => {}
         "keyboard_quit" => {
-            editor.query_replace_session = None;
-            editor.set_status_message(Some("Quit".to_string()));
+            editor.current_mut().query_replace_session = None;
+            editor.current_mut().set_status_message(Some("Quit".to_string()));
         }
-        "move_to_line_start" => editor.move_to_line_start(),
-        "move_to_line_end" => editor.move_to_line_end(),
-        "move_forward" => editor.move_forward(),
-        "move_backward" => editor.move_backward(),
-        "move_next_line" => editor.move_next_line(),
-        "move_previous_line" => editor.move_previous_line(),
-        "move_forward_word" => editor.move_forward_word(),
-        "move_backward_word" => editor.move_backward_word(),
-        "move_to_buffer_start" => editor.move_to_buffer_start(),
-        "move_to_buffer_end" => editor.move_to_buffer_end(),
-        "delete_char" => editor.delete_char(),
-        "delete_backward_char" => editor.delete_backward_char(),
-        "kill_line" => editor.kill_line(),
-        "yank" => editor.yank(),
-        "undo" => editor.undo(),
-        "redo" => editor.redo(),
+        "move_to_line_start" => editor.current_mut().move_to_line_start(),
+        "move_to_line_end" => editor.current_mut().move_to_line_end(),
+        "move_forward" => editor.current_mut().move_forward(),
+        "move_backward" => editor.current_mut().move_backward(),
+        "move_next_line" => editor.current_mut().move_next_line(),
+        "move_previous_line" => editor.current_mut().move_previous_line(),
+        "move_forward_word" => editor.current_mut().move_forward_word(),
+        "move_backward_word" => editor.current_mut().move_backward_word(),
+        "move_to_buffer_start" => editor.current_mut().move_to_buffer_start(),
+        "move_to_buffer_end" => editor.current_mut().move_to_buffer_end(),
+        "delete_char" => editor.current_mut().delete_char(),
+        "delete_backward_char" => editor.current_mut().delete_backward_char(),
+        "kill_line" => {
+            let (buf, kr) = editor.current_and_kill_ring();
+            buf.kill_line(kr);
+        }
+        "yank" => {
+            let kr = editor.kill_ring.clone();
+            editor.current_mut().yank(&kr);
+        }
+        "undo" => editor.current_mut().undo(),
+        "redo" => editor.current_mut().redo(),
         "kill_region" => match payload {
-            Some(CommandPayload::Region(region)) => editor.kill_region(region.start, region.end),
+            Some(CommandPayload::Region(region)) => {
+                let (buf, kr) = editor.current_and_kill_ring();
+                buf.kill_region(region.start, region.end, kr);
+            }
             _ => return Err("kill_region requires region payload".to_string()),
         },
         "copy_region" => match payload {
-            Some(CommandPayload::Region(region)) => editor.copy_region(region.start, region.end),
+            Some(CommandPayload::Region(region)) => {
+                let (buf, kr) = editor.current_and_kill_ring();
+                buf.copy_region(region.start, region.end, kr);
+            }
             _ => return Err("copy_region requires region payload".to_string()),
         },
         "isearch_forward" => match payload {
-            Some(CommandPayload::Search(search)) => editor.isearch_forward(&search.query)?,
+            Some(CommandPayload::Search(search)) => editor.current_mut().isearch_forward(&search.query)?,
             _ => return Err("isearch_forward requires search payload".to_string()),
         },
         "isearch_backward" => match payload {
-            Some(CommandPayload::Search(search)) => editor.isearch_backward(&search.query)?,
+            Some(CommandPayload::Search(search)) => editor.current_mut().isearch_backward(&search.query)?,
             _ => return Err("isearch_backward requires search payload".to_string()),
         },
         "set_cursor" => match payload {
-            Some(CommandPayload::Cursor(cursor)) => editor.set_cursor(cursor.cursor),
+            Some(CommandPayload::Cursor(cursor)) => editor.current_mut().set_cursor(cursor.cursor),
             _ => return Err("set_cursor requires cursor payload".to_string()),
         },
         "insert_text" => match payload {
-            Some(CommandPayload::Insert(insert)) => editor.insert_text(&insert.text),
+            Some(CommandPayload::Insert(insert)) => editor.current_mut().insert_text(&insert.text),
             _ => return Err("insert_text requires payload".to_string()),
         },
         _ => return Err(format!("unknown command: {command}")),
@@ -186,7 +198,7 @@ pub fn start_query_replace(
     let mut editor = state
         .lock()
         .map_err(|_| "state lock poisoned".to_string())?;
-    let status = editor.start_query_replace(payload.query, payload.replace_with)?;
+    let status = editor.current_mut().start_query_replace(payload.query, payload.replace_with)?;
     let snapshot = editor.snapshot();
     Ok(QueryReplaceResponse { snapshot, status })
 }
@@ -199,7 +211,7 @@ pub fn query_replace_step(
     let mut editor = state
         .lock()
         .map_err(|_| "state lock poisoned".to_string())?;
-    let status = editor.query_replace_step(&payload.action)?;
+    let status = editor.current_mut().query_replace_step(&payload.action)?;
     let snapshot = editor.snapshot();
     Ok(QueryReplaceResponse { snapshot, status })
 }
@@ -209,23 +221,45 @@ pub async fn open_file(
     path: String,
     state: State<'_, Mutex<EditorState>>,
 ) -> Result<EditorSnapshot, String> {
-    let path_buf = PathBuf::from(path);
+    let path_buf = PathBuf::from(&path);
     let metadata = fs::metadata(&path_buf).await.ok();
     if metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false) {
         let listing = build_directory_listing(&path_buf).await?;
         let mut editor = state
             .lock()
             .map_err(|_| "state lock poisoned".to_string())?;
-        editor.load_content(
+        use crate::editor::state::BufferState;
+        let mut buf = BufferState::new();
+        buf.load_content(
             listing,
             "UTF-8".to_string(),
             "CRLF".to_string(),
             path_buf.clone(),
         );
-        editor.file_path = None;
-        editor.mark_saved();
-        editor.set_status_message(Some(format!("Directory: {}", path_buf.display())));
+        buf.file_path = None;
+        buf.mark_saved();
+        buf.set_status_message(Some(format!("Directory: {}", path_buf.display())));
+        editor.buffers.push(buf);
+        let new_idx = editor.buffers.len() - 1;
+        editor.switch_to_index(new_idx);
         return Ok(editor.snapshot());
+    }
+
+    // Check if this file is already open in a buffer
+    {
+        let editor = state
+            .lock()
+            .map_err(|_| "state lock poisoned".to_string())?;
+        if let Some(idx) = editor.find_buffer_by_path(&path_buf) {
+            drop(editor);
+            let mut editor = state
+                .lock()
+                .map_err(|_| "state lock poisoned".to_string())?;
+            editor.switch_to_index(idx);
+            let name = editor.current().name();
+            editor.current_mut().set_status_message(Some(format!("Switched to {}", name)));
+            return Ok(editor.snapshot());
+        }
     }
 
     enum OpenResult {
@@ -242,27 +276,33 @@ pub async fn open_file(
     let mut editor = state
         .lock()
         .map_err(|_| "state lock poisoned".to_string())?;
+
+    use crate::editor::state::BufferState;
+    let mut buf = BufferState::new();
     match open_result {
         OpenResult::Existing(decoded) => {
-            editor.load_content(
+            buf.load_content(
                 decoded.text,
                 decoded.encoding,
                 decoded.line_ending,
                 path_buf.clone(),
             );
-            editor.set_status_message(Some(format!("Opened {}", path_buf.display())));
+            buf.set_status_message(Some(format!("Opened {}", path_buf.display())));
         }
         OpenResult::NewFile => {
-            editor.load_content(
+            buf.load_content(
                 String::new(),
                 "UTF-8".to_string(),
                 "CRLF".to_string(),
                 path_buf.clone(),
             );
-            editor.set_status_message(Some(format!("New file: {}", path_buf.display())));
+            buf.set_status_message(Some(format!("New file: {}", path_buf.display())));
         }
     }
 
+    editor.buffers.push(buf);
+    let new_idx = editor.buffers.len() - 1;
+    editor.switch_to_index(new_idx);
     Ok(editor.snapshot())
 }
 
@@ -305,14 +345,15 @@ pub async fn save_file(state: State<'_, Mutex<EditorState>>) -> Result<EditorSna
         let editor = state
             .lock()
             .map_err(|_| "state lock poisoned".to_string())?;
-        let path = editor
+        let buf = editor.current();
+        let path = buf
             .file_path
             .clone()
             .ok_or_else(|| "No file path. Use save as.".to_string())?;
         (
             path,
-            editor.buffer.as_str().to_string(),
-            editor.line_ending.clone(),
+            buf.buffer.as_str().to_string(),
+            buf.line_ending.clone(),
         )
     };
 
@@ -321,8 +362,8 @@ pub async fn save_file(state: State<'_, Mutex<EditorState>>) -> Result<EditorSna
     let mut editor = state
         .lock()
         .map_err(|_| "state lock poisoned".to_string())?;
-    editor.mark_saved();
-    editor.set_status_message(Some(format!("Saved {}", path.display())));
+    editor.current_mut().mark_saved();
+    editor.current_mut().set_status_message(Some(format!("Saved {}", path.display())));
     Ok(editor.snapshot())
 }
 
@@ -341,9 +382,10 @@ pub async fn save_file_as(
         let editor = state
             .lock()
             .map_err(|_| "state lock poisoned".to_string())?;
+        let buf = editor.current();
         (
-            editor.buffer.as_str().to_string(),
-            editor.line_ending.clone(),
+            buf.buffer.as_str().to_string(),
+            buf.line_ending.clone(),
         )
     };
 
@@ -352,9 +394,9 @@ pub async fn save_file_as(
     let mut editor = state
         .lock()
         .map_err(|_| "state lock poisoned".to_string())?;
-    editor.set_file_path(target_path.clone());
-    editor.mark_saved();
-    editor.set_status_message(Some(format!("Saved {}", target_path.display())));
+    editor.current_mut().set_file_path(target_path.clone());
+    editor.current_mut().mark_saved();
+    editor.current_mut().set_status_message(Some(format!("Saved {}", target_path.display())));
     Ok(editor.snapshot())
 }
 
@@ -595,4 +637,38 @@ fn resolve_config_path() -> Option<PathBuf> {
         }
     }
     None
+}
+
+#[tauri::command]
+pub fn switch_buffer(
+    name: String,
+    state: State<'_, Mutex<EditorState>>,
+) -> Result<EditorSnapshot, String> {
+    let mut editor = state
+        .lock()
+        .map_err(|_| "state lock poisoned".to_string())?;
+    editor.switch_to_buffer(&name)?;
+    Ok(editor.snapshot())
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BufferListResponse {
+    pub names: Vec<String>,
+    pub current: String,
+    pub default_switch: String,
+}
+
+#[tauri::command]
+pub fn list_buffers(
+    state: State<'_, Mutex<EditorState>>,
+) -> Result<BufferListResponse, String> {
+    let editor = state
+        .lock()
+        .map_err(|_| "state lock poisoned".to_string())?;
+    Ok(BufferListResponse {
+        names: editor.buffer_names(),
+        current: editor.current().name(),
+        default_switch: editor.default_switch_name(),
+    })
 }

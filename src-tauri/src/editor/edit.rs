@@ -1,6 +1,6 @@
-use crate::editor::state::EditorState;
+use crate::editor::state::BufferState;
 
-impl EditorState {
+impl BufferState {
     pub fn insert_text(&mut self, text: &str) {
         if text.is_empty() {
             return;
@@ -36,7 +36,7 @@ impl EditorState {
         self.status_message = None;
     }
 
-    pub fn kill_line(&mut self) {
+    pub fn kill_line(&mut self, kill_ring: &mut Vec<String>) {
         let chars: Vec<char> = self.buffer.as_str().chars().collect();
         if self.cursor >= chars.len() {
             return;
@@ -57,12 +57,12 @@ impl EditorState {
         let killed: String = chars[self.cursor..end].iter().collect();
         self.record_undo_snapshot();
         self.buffer.remove_range(self.cursor, end);
-        self.push_kill_ring(killed);
+        push_kill_ring(kill_ring, killed);
         self.modified = true;
         self.status_message = Some("Killed line".to_string());
     }
 
-    pub fn copy_region(&mut self, start: usize, end: usize) {
+    pub fn copy_region(&mut self, start: usize, end: usize, kill_ring: &mut Vec<String>) {
         if start >= end {
             return;
         }
@@ -74,11 +74,11 @@ impl EditorState {
         }
 
         let copied: String = chars[start..safe_end].iter().collect();
-        self.push_kill_ring(copied);
+        push_kill_ring(kill_ring, copied);
         self.status_message = Some("Copied region".to_string());
     }
 
-    pub fn kill_region(&mut self, start: usize, end: usize) {
+    pub fn kill_region(&mut self, start: usize, end: usize, kill_ring: &mut Vec<String>) {
         if start >= end {
             return;
         }
@@ -93,13 +93,13 @@ impl EditorState {
         self.record_undo_snapshot();
         self.buffer.remove_range(start, safe_end);
         self.cursor = start.min(self.buffer.char_len());
-        self.push_kill_ring(killed);
+        push_kill_ring(kill_ring, killed);
         self.modified = true;
         self.status_message = Some("Killed region".to_string());
     }
 
-    pub fn yank(&mut self) {
-        let Some(text) = self.kill_ring.first().cloned() else {
+    pub fn yank(&mut self, kill_ring: &[String]) {
+        let Some(text) = kill_ring.first().cloned() else {
             self.status_message = Some("Kill ring empty".to_string());
             return;
         };
@@ -113,5 +113,15 @@ impl EditorState {
 
     pub fn set_cursor(&mut self, cursor: usize) {
         self.cursor = cursor.min(self.buffer.char_len());
+    }
+}
+
+fn push_kill_ring(kill_ring: &mut Vec<String>, text: String) {
+    if text.is_empty() {
+        return;
+    }
+    kill_ring.insert(0, text);
+    if kill_ring.len() > 10 {
+        kill_ring.truncate(10);
     }
 }

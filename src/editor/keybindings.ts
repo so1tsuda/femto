@@ -2,6 +2,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   defaultSaveDirectory,
   fileExists,
+  listBuffers,
   openFile,
   pathCompletions,
   queryReplaceStep,
@@ -10,6 +11,7 @@ import {
   saveFileAs,
   saveFileAsWithOverwrite,
   startQueryReplace,
+  switchBuffer,
 } from "./commands";
 import { promptMinibuffer } from "./minibuffer";
 import { adjustEditorFontSize, recenterTopBottom, renderSnapshot } from "./ui";
@@ -204,6 +206,32 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
       await syncCursorFromDom();
       const snapshot = await runEditorCommand("move_to_buffer_end");
       renderAndTrack(snapshot, "Mark set", true);
+      return true;
+    }
+
+    if (key === "b") {
+      const bufInfo = await listBuffers();
+      const defaultBuf = bufInfo.defaultSwitch;
+      const prompt = `Switch to buffer (default ${defaultBuf}): `;
+
+      const bufferCompleter = async (input: string): Promise<string[]> => {
+        const info = await listBuffers();
+        if (!input) return info.names;
+        const lower = input.toLowerCase();
+        return info.names.filter((n) => n.toLowerCase().startsWith(lower));
+      };
+
+      const chosen = await promptMinibuffer(ctx, prompt, "", {
+        completer: bufferCompleter,
+      });
+
+      const target = chosen ?? defaultBuf;
+      try {
+        const snapshot = await switchBuffer(target);
+        renderAndTrack(snapshot);
+      } catch {
+        await renderWithPrefix();
+      }
       return true;
     }
 

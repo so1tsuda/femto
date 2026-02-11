@@ -1,7 +1,8 @@
 import "./styles/main.css";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { loadAndApplyAppConfig } from "./editor/config";
-import { initializeEditor, openFile } from "./editor/commands";
+import { initializeEditor, openFile, runEditorCommand } from "./editor/commands";
 import { bindEditorKeys } from "./editor/keybindings";
 import { initializeEditorView, renderSnapshot } from "./editor/ui";
 
@@ -89,3 +90,45 @@ loadAndApplyAppConfig()
       status.textContent = `Init error: ${message}`;
     });
   });
+
+getCurrentWindow().onDragDropEvent(async (event) => {
+  if (event.payload.type === "enter" || event.payload.type === "over") {
+    app.classList.add("drag-over");
+    return;
+  }
+
+  if (event.payload.type === "leave") {
+    app.classList.remove("drag-over");
+    return;
+  }
+
+  if (event.payload.type === "drop") {
+    app.classList.remove("drag-over");
+
+    const paths = event.payload.paths;
+    if (!paths || paths.length === 0) {
+      return;
+    }
+
+    const filePath = paths[0];
+
+    try {
+      const snapshot = await runEditorCommand("noop");
+      if (snapshot.modified) {
+        const ok = window.confirm(
+          "Buffer is modified. Discard changes and open the dropped file?"
+        );
+        if (!ok) {
+          return;
+        }
+      }
+
+      const opened = await openFile(filePath);
+      renderSnapshot(ctx, opened);
+      editor.focus();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      status.textContent = `Drop error: ${message}`;
+    }
+  }
+});
