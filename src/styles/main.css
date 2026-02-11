@@ -11,14 +11,14 @@
   --minibuffer-focus: #6f6f6f;
   --editor-font-size: 14px;
   --editor-font-family: "Cascadia Mono", "Consolas", "Yu Gothic UI", "BIZ UDPGothic", "Meiryo UI", "Meiryo", monospace;
-  --tok-heading: #7dcfff;
-  --tok-quote: #8b949e;
-  --tok-list: #e0af68;
-  --tok-code: #9ece6a;
-  --tok-strong: #ff9e64;
-  --tok-em: #73daca;
-  --tok-link-text: #7aa2f7;
-  --tok-link-url: #2ac3de;
+  --tok-heading: #a31515;
+  --tok-quote: #0451a5;
+  --tok-list: #0451a5;
+  --tok-code: #098658;
+  --tok-strong: #0000ff;
+  --tok-em: #000000;
+  --tok-link-text: #0000ff;
+  --tok-link-url: #a31515;
   --tok-hr: #565f89;
 }
 
