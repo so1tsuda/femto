@@ -19,7 +19,7 @@ function detectLanguage(filePath: string | null): LanguageId {
 }
 
 function highlightInlineMarkdown(line: string): string {
-  const pattern = /(`[^`\n]*`)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[[^\]\n]+\]\([^)]+\))/g;
+  const pattern = /(`[^`\n]*`)|(https?:\/\/[^\s<>\])"]+)|(<[a-zA-Z\/][^>]*>)|(\*\*[^*\n]+\*\*)|(\*[^*\n]+\*)|(\[[^\]\n]+\]\([^)]+\))/g;
   let result = "";
   let last = 0;
 
@@ -29,13 +29,23 @@ function highlightInlineMarkdown(line: string): string {
 
     result += escapeHtml(line.slice(last, index));
 
-    if (token.startsWith("`")) {
+    if (match[1]) {
+      // inline code
       result += `<span class="tok-md-inline-code">${escapeHtml(token)}</span>`;
-    } else if (token.startsWith("**")) {
+    } else if (match[2]) {
+      // raw URL
+      result += `<span class="tok-md-link-url">${escapeHtml(token)}</span>`;
+    } else if (match[3]) {
+      // HTML tag
+      result += `<span class="tok-md-html-tag">${escapeHtml(token)}</span>`;
+    } else if (match[4]) {
+      // bold
       result += `<span class="tok-md-strong">${escapeHtml(token)}</span>`;
-    } else if (token.startsWith("*")) {
+    } else if (match[5]) {
+      // italic
       result += `<span class="tok-md-em">${escapeHtml(token)}</span>`;
-    } else if (token.startsWith("[")) {
+    } else if (match[6]) {
+      // [text](url) link
       const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (linkMatch) {
         result += `<span class="tok-md-link-text">[${escapeHtml(linkMatch[1])}]</span><span class="tok-md-link-url">(${escapeHtml(linkMatch[2])})</span>`;

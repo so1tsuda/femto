@@ -169,6 +169,10 @@ body {
   color: var(--tok-hr);
 }
 
+.tok-md-html-tag {
+  color: #800000;
+}
+
 .status {
   display: flex;
   align-items: center;

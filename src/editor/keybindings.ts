@@ -311,6 +311,15 @@ export function bindEditorKeys(ctx: EditorUiContext): void {
 
     const key = eventKey(event);
 
+    // Block browser-default shortcuts immediately (before any async work)
+    // WebView2 on Windows intercepts Ctrl+P (print), Ctrl+N (new window), etc.
+    if (event.ctrlKey && !event.altKey) {
+      const browserKeys = ["p", "n", "s", "o", "g", "h", "r", "k", "w", "y", "b", "f", "a", "e", "d", "l", "m", "x"];
+      if (browserKeys.includes(key)) {
+        event.preventDefault();
+      }
+    }
+
     if (keyState.ctrlXPrefix) {
       event.preventDefault();
       try {
